@@ -1,290 +1,246 @@
-// =============================================
-// Image Preview Logic
-// =============================================
-function setupImagePreview(inputId, imgId, containerId) {
-    const input = document.getElementById(inputId);
-    if (!input) return;
-    input.addEventListener('change', function(event) {
-        const file = event.target.files[0];
-        const container = document.getElementById(containerId);
-        const img = document.getElementById(imgId);
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = e => { img.src = e.target.result; container.style.display = 'flex'; };
-            reader.readAsDataURL(file);
-        } else {
-            img.src = ''; container.style.display = 'none';
-        }
+// ====================================================
+// ① 유전자 데이터 정의 (공식 카테고리 기반)
+// ====================================================
+
+// --- 1. 생리 및 생존 (Physiology) ---
+const PHYSIOLOGY_GENES = [
+    { id: 'SleepLow', ko: '하급 수면', emoji: '💤', desc: '더 적은 수면이 필요합니다.', cpx: 1, met: -1, extra: '<statOffsets><RestRateMultiplier>0.8</RestRateMultiplier></statOffsets>' },
+    { id: 'SleepNever', ko: '수면 상실', emoji: '🚫', desc: '더 이상 잠을 자지 않습니다.', cpx: 3, met: -5, extra: '<forcedHair>None</forcedHair><statOffsets><RestRateMultiplier>0</RestRateMultiplier></statOffsets>' },
+    { id: 'HealFast', ko: '빠른 상처 회복', emoji: '🩹', desc: '치료 속도와 회복량이 증가합니다.', cpx: 1, met: -1, extra: '<statOffsets><InjuryHealingFactor>0.5</InjuryHealingFactor></statOffsets>' },
+    { id: 'ImmuneSuper', ko: '완전 면역', emoji: '🛡️', desc: '모든 감염에 저항력이 대단히 높습니다.', cpx: 2, met: -2, extra: '<statOffsets><ImmunityGainSpeed>0.5</ImmunityGainSpeed></statOffsets>' },
+    { id: 'StrongStomach', ko: '강한 위장', emoji: '🍖', desc: '날것이나 썩은 음식을 먹어도 식중독에 걸리지 않습니다.', cpx: 1, met: 0, extra: '<foodPoisoningChanceFactor>0</foodPoisoningChanceFactor>' },
+    { id: 'LowHunger', ko: '낮은 허기', emoji: '🍞', desc: '허기 소모 속도가 감소합니다.', cpx: 1, met: 1, extra: '<statFactors><HungerRateMultiplier>0.7</HungerRateMultiplier></statFactors>' },
+    { id: 'NoAging', ko: '노화 정지', emoji: '⏳', desc: '노화와 관련된 질병에 걸리지 않습니다.', cpx: 2, met: 0, extra: '<noAging>true</noAging>' },
+];
+
+// --- 2. 전투 및 성능 (Combat) ---
+const COMBAT_GENES = [
+    { id: 'MoveFast', ko: '빠른 속도', emoji: '🏃', desc: '이동 속도가 대폭 상승합니다.', cpx: 1, met: -1, extra: '<statOffsets><MoveSpeed>0.4</MoveSpeed></statOffsets>' },
+    { id: 'MeleeStrong', ko: '근접 전문가', emoji: '⚔️', desc: '근접 공격력과 명중률이 상승합니다.', cpx: 1, met: -1, extra: '<statOffsets><MeleeHitChance>4</MeleeHitChance><MeleeDamageFactor>1.25</MeleeDamageFactor></statOffsets>' },
+    { id: 'ShootingExpert', ko: '사격 전문가', emoji: '🔫', desc: '사격 명중률과 조준 속도가 상승합니다.', cpx: 1, met: -1, extra: '<statOffsets><ShootingAccuracyPawn>4</ShootingAccuracyPawn><AimingDelayFactor>-0.1</AimingDelayFactor></statOffsets>' },
+    { id: 'Robust', ko: '전투적 견고함', emoji: '💪', desc: '받는 피해를 25% 경감합니다.', cpx: 2, met: -2, extra: '<damageRawFactor>0.75</damageRawFactor>' },
+    { id: 'ToxicResist', ko: '독성 저항', emoji: '☣️', desc: '독소와 낙진에 대한 피해를 입지 않습니다.', cpx: 1, met: 0, extra: '<statOffsets><ToxicEnvironmentResistance>1.0</ToxicEnvironmentResistance></statOffsets>' },
+    { id: 'PainReduced', ko: '고통 완화', emoji: '💊', desc: '고통을 덜 느낍니다.', cpx: 1, met: 1, extra: '<statFactors><PainFactor>0.5</PainFactor></statFactors>' },
+];
+
+// --- 3. 사교 및 외관 (Social) ---
+const SOCIAL_GENES = [
+    { id: 'BeautySuper', ko: '빼어난 미모', emoji: '✨', desc: '모든 사람에게 호감을 삽니다.', cpx: 1, met: -1, extra: '<statOffsets><PawnBeauty>2</PawnBeauty></statOffsets>' },
+    { id: 'SocialImpactHigh', ko: '사교적 천재', emoji: '💬', desc: '사교적 영향력이 강해집니다.', cpx: 1, met: -1, extra: '<statOffsets><SocialImpact>0.2</SocialImpact></statOffsets>' },
+    { id: 'Ugly', ko: '불쾌한 외모', emoji: '👹', desc: '타인에게 혐오감을 줍니다.', cpx: 1, met: 2, extra: '<statOffsets><PawnBeauty>-2</PawnBeauty></statOffsets>' },
+    { id: 'MoodHappy', ko: '낙천적 기분', emoji: '😊', desc: '항상 기분이 좋습니다.', cpx: 1, met: -2, extra: '<statOffsets><Mood>8</Mood></statOffsets>' },
+    { id: 'Kind', ko: '친절한 본성', emoji: '💕', desc: '타인을 비난하지 않고 칭찬만 합니다.', cpx: 1, met: -1, extra: '<statOffsets><SocialImpact>0.1</SocialImpact></statOffsets>' },
+];
+
+// --- 4. 액티브 능력 (Active Abilities) - NEW ---
+const ABILITY_GENES = [
+    { id: 'FireBreath', ko: '화염 숨결', emoji: '🔥', desc: '전방에 화염을 뿜습니다.', cpx: 2, met: -2, abil: 'FireBreath' },
+    { id: 'AcidSpit', ko: '산성 침', emoji: '🤢', desc: '목표물에게 부식성 산을 뱉습니다.', cpx: 2, met: -1, abil: 'AcidSpit' },
+    { id: 'FoamSpray', ko: '거품 분사', emoji: '🫧', desc: '화재 진압용 거품을 분사합니다.', cpx: 1, met: 0, abil: 'FoamSpray' },
+    { id: 'Longjump', ko: '강력한 도약', emoji: '🚀', desc: '먼 거리를 단숨에 도약합니다.', cpx: 1, met: -1, abil: 'Longjump' },
+    { id: 'PiercingSpine', ko: '가시 발사', emoji: '🎯', desc: '등에서 가시를 발사하여 적을 공격합니다.', cpx: 2, met: -1, abil: 'PiercingSpine' },
+    { id: 'Coagulate', ko: '응고 능력', emoji: '🩸', desc: '상처를 즉시 응고시켜 지혈합니다.', cpx: 1, met: -1, abil: 'Coagulate' },
+];
+
+// --- 5. 신체 부위 및 미용 (Body Parts) ---
+const BODY_PART_GENES = [
+    { id: 'Tail', ko: '상징적인 꼬리', emoji: '🦎', desc: '균형 발달형 꼬리입니다.', cpx: 0, met: 0, hediff: { defName: 'XENO_Hediff_Tail', label: 'tail', desc: 'A functional or cosmetic tail.' } },
+    { id: 'Horns', ko: '악마의 뿔', emoji: '😈', desc: '위협적인 뿔입니다.', cpx: 1, met: 0, statXml: '<statOffsets><MeleeHitChance>1</MeleeHitChance></statOffsets>', hediff: { defName: 'XENO_Hediff_Horns', label: 'horns', desc: 'Bony horns.' } },
+    { id: 'Wings', ko: '장식용 날개', emoji: '🕊️', desc: '비행 불능이지만 이속이 상승합니다.', cpx: 2, met: -1, statXml: '<statOffsets><MoveSpeed>0.2</MoveSpeed></statOffsets>', hediff: { defName: 'XENO_Hediff_Wings', label: 'vestigial wings', desc: 'Feathered wings.' } },
+    { id: 'PointyEars', ko: '요정 귀', emoji: '🧝', desc: '길쭉하고 뾰족한 귀입니다.', cpx: 0, met: 0, hediff: { defName: 'XENO_Hediff_Ears', label: 'pointed ears', desc: 'Elven ears.' } },
+    { id: 'Scales', ko: '용의 비늘', emoji: '🧶', desc: '단단한 피부 방어력.', cpx: 2, met: 0, statXml: '<statOffsets><ArmorRating_Sharp>0.1</ArmorRating_Sharp></statOffsets>', hediff: { defName: 'XENO_Hediff_Scales', label: 'scales', desc: 'Tough skin scales.' } },
+];
+
+// --- 6. 아키타이트 및 특수 (Archite) ---
+const ARCHITE_GENES = [
+    { id: 'Deathless', ko: '불사신', emoji: '♾️', desc: '절대로 죽지 않고 상처를 재생합니다.', cpx: 5, met: -5, arch: true, extra: '<deathless>true</deathless>' },
+    { id: 'Bloodfeeder', ko: '생혈 흡식', emoji: '🧛', desc: '흡혈귀처럼 피를 마셔야 합니다.', cpx: 3, met: -3, arch: false, extra: '<minBloodConsumptionPerDay>0.2</minBloodConsumptionPerDay>' },
+    { id: 'Ageless', ko: '불로', emoji: '👶', desc: '육체 나이가 18세에서 영원히 멈춥니다.', cpx: 2, met: 0, arch: true, extra: '<statOffsets><AgaingRateMultiplier>0</AgaingRateMultiplier></statOffsets>' },
+    { id: 'PsychicImmune', ko: '정신력 투명', emoji: '🕯️', desc: '모든 정신적 영향에 면역입니다.', cpx: 2, met: -1, extra: '<statOffsets><PsychicSensitivity>-1.0</PsychicSensitivity></statOffsets>' },
+];
+
+const TRAITS = [
+    { id:'Tough', ko:'강인함', defName:'Tough', cpx:1, met:0 },
+    { id:'FastLearner', ko:'빠른 학습자', defName:'FastLearner', cpx:1, met:0 },
+    { id:'Cannibal', ko:'식인', defName:'Cannibal', cpx:1, met:0 },
+    { id:'Kind', ko:'친절함', defName:'Kind', cpx:1, met:0 },
+    { id:'Brawler', ko:'싸움꾼', defName:'Brawler', cpx:0, met:0 },
+];
+
+// ====================================================
+// ② 대사 균형 및 렌더링 로직
+// ====================================================
+let totalMet = 0;
+
+function updateMetDisplay() {
+    const numEl = document.getElementById('metNum');
+    const fillEl = document.getElementById('metFill');
+    const hintEl = document.getElementById('metHint');
+    numEl.textContent = (totalMet > 0 ? '+' : '') + totalMet;
+    const capped = Math.max(-6, Math.min(6, totalMet));
+    fillEl.style.left = (capped < 0 ? (50 - Math.abs(capped)*8) : 50) + '%';
+    fillEl.style.width = (Math.abs(capped)*8) + '%';
+    if (totalMet < 0) { fillEl.style.background = '#818cf8'; } else if (totalMet > 0) { fillEl.style.background = '#fbbf24'; } else { fillEl.style.background = '#94a3b8'; }
+    const hints = ['생존 불가능','극한 소모','과도한 식탐','식량 필요','균형','효율적 생존','절식의 대가'];
+    hintEl.textContent = hints[Math.min(6, Math.max(0, totalMet + 3))];
+}
+
+function renderGenes(containerId, list, prefix) {
+    const container = document.getElementById(containerId);
+    if(!container) return;
+    list.forEach(g => {
+        const metSign = g.met > 0 ? '+' : '';
+        const archTag = g.arch ? '<span class="badge badge-archite">♦ 아키타이트</span>' : '';
+        const card = document.createElement('label');
+        card.className = 'gene-card';
+        card.innerHTML = `
+            <input type="checkbox" id="${prefix}-${g.id}" data-met="${g.met}" class="gene-checkbox">
+            <div class="gene-card-inner">
+                <div class="gene-emoji">${g.emoji}</div>
+                <div class="gene-name">${g.ko}</div>
+                <div class="gene-badges"><span class="badge ${g.met < 0 ? 'badge-met-neg' : 'badge-met-pos'}">대사 ${metSign}${g.met}</span>${archTag}</div>
+            </div>`;
+        container.appendChild(card);
     });
 }
 
-setupImagePreview('imgPreview',   'preview-img-preview',    'preview-container-preview');
-setupImagePreview('imgHeadSouth', 'preview-img-head-south', 'preview-container-head-south');
-setupImagePreview('imgHeadNorth', 'preview-img-head-north', 'preview-container-head-north');
-setupImagePreview('imgHeadEast',  'preview-img-head-east',  'preview-container-head-east');
-setupImagePreview('imgBodySouth', 'preview-img-body-south', 'preview-container-body-south');
-setupImagePreview('imgBodyNorth', 'preview-img-body-north', 'preview-container-body-north');
-setupImagePreview('imgBodyEast',  'preview-img-body-east',  'preview-container-body-east');
+function renderTraitGrid() {
+    const container = document.getElementById('traitGrid');
+    TRAITS.forEach(t => {
+        const el = document.createElement('label');
+        el.className = 'trait-item';
+        el.innerHTML = `<input type="checkbox" id="trait-${t.id}" data-met="${t.met}" class="gene-checkbox"><span>${t.ko}</span>`;
+        container.appendChild(el);
+    });
+}
 
-// =============================================
-// ZIP Generation
-// =============================================
-document.getElementById('generateBtn').addEventListener('click', async () => {
+function renderSkillGrid() {
+    const container = document.getElementById('skillGrid');
+    const skills = ['Shooting','Melee','Construction','Mining','Cooking','Plants','Animals','Crafting','Art','Medicine','Social','Intellectual'];
+    skills.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'skill-row';
+        div.innerHTML = `<div class="skill-name">${s}</div><div class="skill-input-wrap"><input type="number" id="skill-${s}" value="0" class="skill-input"></div>`;
+        container.appendChild(div);
+    });
+}
 
-    // --- 1. 기본 폼 데이터 수집 ---
-    const modName       = document.getElementById('modName').value      || 'My Custom Race';
-    const author        = document.getElementById('author').value       || 'Unknown';
-    const defName       = document.getElementById('defName').value      || 'MyAlienRace';
-    const raceLabel     = document.getElementById('raceLabel').value    || 'Alien';
-    const description   = document.getElementById('description').value  || 'A custom race.';
-    const moveSpeed     = document.getElementById('moveSpeed').value;
-    const marketValue   = document.getElementById('marketValue').value;
-    const minTemp       = document.getElementById('minTemp').value;
-    const maxTemp       = document.getElementById('maxTemp').value;
-    const healthScale   = document.getElementById('healthScale').value;
-    const armorBlunt    = document.getElementById('armorBlunt').value;
-    const armorSharp    = document.getElementById('armorSharp').value;
-    const hungerRate    = document.getElementById('hungerRate').value;
-    const diet          = document.getElementById('diet').value;
-    const wildness      = document.getElementById('wildness').value;
-    const meatAmount    = document.getElementById('meatAmount').value;
-    const leatherAmount = document.getElementById('leatherAmount').value;
+// ====================================================
+// ③ 초기화 및 대사 추적
+// ====================================================
+document.addEventListener('DOMContentLoaded', () => {
+    renderGenes('physiologyGrid', PHYSIOLOGY_GENES, 'phy');
+    renderGenes('combatGrid', COMBAT_GENES, 'com');
+    renderGenes('socialGrid', SOCIAL_GENES, 'soc');
+    renderGenes('abilityGrid', ABILITY_GENES, 'abi');
+    renderGenes('bodyPartGrid', BODY_PART_GENES, 'bpt');
+    renderGenes('architeGrid', ARCHITE_GENES, 'arc');
+    renderTraitGrid();
+    renderSkillGrid();
 
-    // --- 2. 특성(Trait) 수집 ---
-    const checkedTraits = [];
-    document.querySelectorAll('.trait-item input[type="checkbox"]:checked').forEach(cb => {
-        checkedTraits.push({
-            defName: cb.dataset.defname,
-            degree:  cb.dataset.degree
+    document.addEventListener('change', e => {
+        if(e.target.classList.contains('gene-checkbox')) {
+            const m = parseInt(e.target.dataset.met || 0);
+            totalMet += e.target.checked ? m : -m;
+            updateMetDisplay();
+        }
+    });
+
+    const imgSetup = (i, p, c) => {
+        const input = document.getElementById(i);
+        input.addEventListener('change', () => {
+            const f = input.files[0];
+            if(f){ const r = new FileReader(); r.onload = v => { document.getElementById(p).src = v.target.result; document.getElementById(c).style.display = 'flex'; }; r.readAsDataURL(f); }
         });
-    });
+    };
+    imgSetup('imgIcon', 'preview-img-icon', 'preview-container-icon');
+    imgSetup('imgPreview', 'preview-img-preview', 'preview-container-preview');
+});
 
-    const traitsXml = checkedTraits.length > 0
-        ? `\n        <forcedRaceTraitEntries>\n` +
-          checkedTraits.map(t =>
-            `            <li>\n                <defName>${t.defName}</defName>\n                <degree>${t.degree}</degree>\n            </li>`
-          ).join('\n') +
-          `\n        </forcedRaceTraitEntries>`
-        : '';
+// ====================================================
+// ④ 모드 파일 생성 (XML)
+// ====================================================
+document.getElementById('generateBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true; btn.textContent = '생성 중...';
 
-    // --- 3. 스킬 보정 수집 ---
-    const skillNames = ['Shooting','Melee','Construction','Mining','Cooking','Plants','Animals','Crafting','Art','Medicine','Social','Intellectual'];
-    const skillGains = {};
-    skillNames.forEach(s => {
-        const val = parseInt(document.getElementById('skill-' + s).value, 10);
-        if (!isNaN(val) && val !== 0) skillGains[s] = val;
-    });
-    const hasSkillBonuses = Object.keys(skillGains).length > 0;
-
-    // --- 4. 이미지 파일 ---
-    const imgPreview   = document.getElementById('imgPreview').files[0];
-    const imgHeadSouth = document.getElementById('imgHeadSouth').files[0];
-    const imgHeadNorth = document.getElementById('imgHeadNorth').files[0];
-    const imgHeadEast  = document.getElementById('imgHeadEast').files[0];
-    const imgBodySouth = document.getElementById('imgBodySouth').files[0];
-    const imgBodyNorth = document.getElementById('imgBodyNorth').files[0];
-    const imgBodyEast  = document.getElementById('imgBodyEast').files[0];
-    const hasHeadTex   = imgHeadSouth || imgHeadNorth || imgHeadEast;
-    const hasBodyTex   = imgBodySouth || imgBodyNorth || imgBodyEast;
+    const modName = document.getElementById('modName').value;
+    const author = document.getElementById('author').value;
+    const defName = document.getElementById('defName').value;
+    const xeLabel = document.getElementById('xeLabel').value;
+    const desc = document.getElementById('description').value;
 
     const zip = new JSZip();
-    const pkgAuthor  = author.replace(/[^a-zA-Z0-9]/g, '');
-    const pkgDefName = defName.replace(/[^a-zA-Z0-9]/g, '');
+    const geneRefs = [];
+    const geneDefs = [];
+    const hediffDefs = [];
 
-    // =============================================
-    // About/About.xml
-    // =============================================
-    zip.folder("About").file("About.xml", `<?xml version="1.0" encoding="utf-8"?>
-<ModMetaData>
-    <name>${modName}</name>
-    <author>${author}</author>
-    <packageId>${pkgAuthor}.${pkgDefName}</packageId>
-    <supportedVersions>
-        <li>1.4</li>
-        <li>1.5</li>
-    </supportedVersions>
-    <modDependencies>
-        <li>
-            <packageId>erdelf.HumanoidAlienRaces</packageId>
-            <displayName>Humanoid Alien Races</displayName>
-            <steamWorkshopUrl>steam://url/CommunityFilePage/839005762</steamWorkshopUrl>
-        </li>
-    </modDependencies>
-    <description>${description}</description>
-</ModMetaData>`);
+    const getChecked = (list, prefix) => list.filter(g => document.getElementById(`${prefix}-${g.id}`).checked);
 
-    // =============================================
-    // Defs/ThingDefs_Races/[DefName].xml
-    // =============================================
-    const raceXml = `<?xml version="1.0" encoding="utf-8" ?>
-<Defs>
-  <AlienRace.ThingDef_AlienRace ParentName="BasePawn">
-    <defName>${defName}</defName>
-    <label>${raceLabel}</label>
-    <description>${description}</description>
-    <statBases>
-      <MarketValue>${marketValue}</MarketValue>
-      <MoveSpeed>${moveSpeed}</MoveSpeed>
-      <ComfyTemperatureMin>${minTemp}</ComfyTemperatureMin>
-      <ComfyTemperatureMax>${maxTemp}</ComfyTemperatureMax>
-      <MeatAmount>${meatAmount}</MeatAmount>
-      <LeatherAmount>${leatherAmount}</LeatherAmount>
-      <ArmorRating_Blunt>${armorBlunt}</ArmorRating_Blunt>
-      <ArmorRating_Sharp>${armorSharp}</ArmorRating_Sharp>
-    </statBases>
-    <race>
-      <thinkTreeMain>Humanlike</thinkTreeMain>
-      <thinkTreeConstant>HumanlikeConstant</thinkTreeConstant>
-      <intelligence>Humanlike</intelligence>
-      <makesFootprints>true</makesFootprints>
-      <lifeExpectancy>80</lifeExpectancy>
-      <diet>${diet}</diet>
-      <wildness>${wildness}</wildness>
-      <baseHungerRate>${hungerRate}</baseHungerRate>
-      <baseBodySize>1.0</baseBodySize>
-      <baseHealthScale>${healthScale}</baseHealthScale>
-      <lifeStageAges>
-        <li><def>HumanlikeBaby</def><minAge>0</minAge></li>
-        <li><def>HumanlikeToddler</def><minAge>1.2</minAge></li>
-        <li><def>HumanlikeChild</def><minAge>3</minAge></li>
-        <li><def>HumanlikeTeenager</def><minAge>13</minAge></li>
-        <li><def>HumanlikeAdult</def><minAge>18</minAge></li>
-      </lifeStageAges>
-      <soundMeleeHitPawn>Pawn_Melee_Punch_HitPawn</soundMeleeHitPawn>
-      <soundMeleeHitBuilding>Pawn_Melee_Punch_HitBuilding</soundMeleeHitBuilding>
-      <soundMeleeMiss>Pawn_Melee_Punch_Miss</soundMeleeMiss>
-    </race>
+    const allSelected = [
+        ...getChecked(PHYSIOLOGY_GENES, 'phy'),
+        ...getChecked(COMBAT_GENES, 'com'),
+        ...getChecked(SOCIAL_GENES, 'soc'),
+        ...getChecked(ABILITY_GENES, 'abi'),
+        ...getChecked(BODY_PART_GENES, 'bpt'),
+        ...getChecked(ARCHITE_GENES, 'arc')
+    ];
 
-    <alienRace>
-      <generalSettings>
-        <humanRecipeImport>true</humanRecipeImport>${traitsXml}
-        <alienPartGenerator>
-          <headTypes>
-            <li>Male_AverageNormal</li>
-            <li>Female_AverageNormal</li>
-          </headTypes>
-          <bodyTypes>
-            <li>Male</li>
-            <li>Female</li>
-            <li>Thin</li>
-            <li>Fat</li>
-            <li>Hulk</li>
-          </bodyTypes>${(hasHeadTex || hasBodyTex) ? `
-          <colorChannels>
-            <li>
-              <name>skin</name>
-              <first Class="ColorGenerator_Options">
-                <options>
-                  <li><weight>10</weight><only>RGBA(1,1,1,1)</only></li>
-                </options>
-              </first>
-            </li>
-          </colorChannels>` : ''}
-        </alienPartGenerator>
-      </generalSettings>
-      <graphicPaths>
-        ${hasBodyTex ? `<body>Things/Pawn/${defName}/Body/</body>` : '<!-- body texture path: Things/Pawn/${defName}/Body/ -->'}
-        ${hasHeadTex ? `<head>Things/Pawn/${defName}/Head/</head>` : '<!-- head texture path: Things/Pawn/${defName}/Head/ -->'}
-      </graphicPaths>
-    </alienRace>
-  </AlienRace.ThingDef_AlienRace>
-</Defs>`;
+    allSelected.forEach(g => {
+        const gDefName = `${defName}_Gene_${g.id}`;
+        geneRefs.push(gDefName);
 
-    zip.folder("Defs").folder("ThingDefs_Races").file(`${defName}.xml`, raceXml);
+        let body = '';
+        if (g.extra) body += `\n        ${g.extra}`;
+        if (g.statXml) body += `\n        ${g.statXml}`;
+        if (g.abil) body += `\n        <abilities><li>${g.abil}</li></abilities>`;
+        if (g.hediff) {
+            const hDefName = `${defName}_Hediff_${g.id}`;
+            body += `\n        <hediffGiversCanAnimate>true</hediffGiversCanAnimate>\n        <hediffGivers><li><hediff>${hDefName}</hediff><partsToAffect><li>Torso</li></partsToAffect></li></hediffGivers>`;
+            hediffDefs.push(`<HediffDef><defName>${hDefName}</defName><label>${g.hediff.label}</label><description>${g.hediff.desc}</description><hediffClass>HediffWithComps</hediffClass><isBad>false</isBad></HediffDef>`);
+        }
 
-    // =============================================
-    // Defs/BackstoryDefs/[DefName]_Backstory.xml (스킬 보정이 있을 때만)
-    // =============================================
-    if (hasSkillBonuses) {
-        const skillLinesXml = Object.entries(skillGains)
-            .map(([skill, val]) => `        <${skill}>${val}</${skill}>`)
-            .join('\n');
+        geneDefs.push(
+`<GeneDef>
+    <defName>${gDefName}</defName>
+    <label>${g.ko}</label>
+    <description>${g.desc}</description>
+    <biostatCpx>${g.cpx}</biostatCpx>
+    <biostatMet>${g.met}</biostatMet>${body}
+</GeneDef>`);
+    });
 
-        const backstoryXml = `<?xml version="1.0" encoding="utf-8" ?>
-<!--
-  이 백스토리 파일은 ${modName} 종족의 스킬 보정을 적용하기 위한 파일입니다.
-  종족 폰이 이 백스토리를 가질 때 스킬 보정이 적용됩니다.
-  HAR에서 종족 전원에게 이 백스토리를 강제 적용하는 방법:
-    → alienRace > generalSettings 에 아래를 추가하세요:
-      <forcedBackstoryCategoryFilter>
-        <categories><li>${defName}Origins</li></categories>
-      </forcedBackstoryCategoryFilter>
--->
-<Defs>
-    <BackstoryDef>
-        <defName>${defName}_RacialOrigin</defName>
-        <title>${raceLabel} 출신</title>
-        <titleShort>${raceLabel}</titleShort>
-        <baseDesc>${raceLabel} 종족으로 태어나 그들만의 방식으로 성장했다.</baseDesc>
-        <slot>Childhood</slot>
-        <categoryOfPawn>${defName}Origins</categoryOfPawn>
-        <skillGains>
-${skillLinesXml}
-        </skillGains>
-    </BackstoryDef>
-</Defs>`;
-        zip.folder("Defs").folder("BackstoryDefs").file(`${defName}_Backstory.xml`, backstoryXml);
+    // 강제 특성
+    const selTraits = getChecked(TRAITS, 'trait');
+    selTraits.forEach(t => {
+        const gtName = `${defName}_Gene_Trait_${t.id}`;
+        geneRefs.push(gtName);
+        geneDefs.push(`<GeneDef><defName>${gtName}</defName><label>${t.ko} 특성</label><biostatMet>${t.met}</biostatMet><forcedTraits><li><def>${t.defName}</def></li></forcedTraits></GeneDef>`);
+    });
+
+    // 외형 색상
+    if(document.getElementById('useSkinColor').checked) {
+        const c = document.getElementById('skinColor').value;
+        const r=(parseInt(c.slice(1,3),16)/255).toFixed(2), g=(parseInt(c.slice(3,5),16)/255).toFixed(2), b=(parseInt(c.slice(5,7),16)/255).toFixed(2);
+        geneRefs.push(`${defName}_Gene_Skin`);
+        geneDefs.push(`<GeneDef><defName>${defName}_Gene_Skin</defName><label>피부색</label><skinColorBase>(${r},${g},${b})</skinColorBase></GeneDef>`);
     }
 
-    // =============================================
-    // 이미지 파일 처리
-    // =============================================
-    if (imgPreview) {
-        zip.folder("About").file("Preview.png", imgPreview);
+    // ZIP 파일 구성
+    const defFolder = zip.folder("Defs");
+    defFolder.folder("XenotypeDefs").file(`${defName}.xml`, `<?xml version="1.0" encoding="utf-8"?><Defs><XenotypeDef><defName>${defName}</defName><label>${xeLabel}</label><description>${desc}</description><iconPath>Things/Xenotype/${defName}</iconPath><genes>${geneRefs.map(r=>`<li>${r}</li>`).join('')}</genes></XenotypeDef></Defs>`);
+    defFolder.folder("GeneDefs").file(`${defName}_Genes.xml`, `<?xml version="1.0" encoding="utf-8"?><Defs>${geneDefs.join('')}</Defs>`);
+    if(hediffDefs.length) defFolder.folder("HediffDefs").file(`${defName}_Hediffs.xml`, `<?xml version="1.0" encoding="utf-8"?><Defs>${hediffDefs.join('')}</Defs>`);
+
+    zip.folder("About").file("About.xml", `<?xml version="1.0" encoding="utf-8"?><ModMetaData><name>${modName}</name><author>${author}</author><packageId>${author}.${defName}</packageId><supportedVersions><li>1.4</li><li>1.5</li></supportedVersions><description>${desc}</description></ModMetaData>`);
+
+    const iconFile = document.getElementById('imgIcon').files[0];
+    if(iconFile) {
+        const buf = await iconFile.arrayBuffer();
+        zip.folder("Textures").folder("Things").folder("Xenotype").file(`${defName}.png`, buf);
     }
 
-    if (hasHeadTex) {
-        const headFolder = zip.folder("Textures").folder("Things").folder("Pawn").folder(defName).folder("Head");
-        if (imgHeadSouth) {
-            headFolder.file("Male_AverageNormal_south.png",   imgHeadSouth);
-            headFolder.file("Female_AverageNormal_south.png", imgHeadSouth);
-        }
-        if (imgHeadNorth) {
-            headFolder.file("Male_AverageNormal_north.png",   imgHeadNorth);
-            headFolder.file("Female_AverageNormal_north.png", imgHeadNorth);
-        }
-        if (imgHeadEast) {
-            headFolder.file("Male_AverageNormal_east.png",    imgHeadEast);
-            headFolder.file("Female_AverageNormal_east.png",  imgHeadEast);
-            headFolder.file("Male_AverageNormal_west.png",    imgHeadEast); // 게임이 자동 미러링
-            headFolder.file("Female_AverageNormal_west.png",  imgHeadEast);
-        }
-    }
-
-    if (hasBodyTex) {
-        const bodyFolder = zip.folder("Textures").folder("Things").folder("Pawn").folder(defName).folder("Body");
-        if (imgBodySouth) {
-            bodyFolder.file("Naked_Male_south.png",   imgBodySouth);
-            bodyFolder.file("Naked_Female_south.png", imgBodySouth);
-        }
-        if (imgBodyNorth) {
-            bodyFolder.file("Naked_Male_north.png",   imgBodyNorth);
-            bodyFolder.file("Naked_Female_north.png", imgBodyNorth);
-        }
-        if (imgBodyEast) {
-            bodyFolder.file("Naked_Male_east.png",    imgBodyEast);
-            bodyFolder.file("Naked_Female_east.png",  imgBodyEast);
-            bodyFolder.file("Naked_Male_west.png",    imgBodyEast);
-            bodyFolder.file("Naked_Female_west.png",  imgBodyEast);
-        }
-    }
-
-    // =============================================
-    // ZIP 다운로드
-    // =============================================
-    const btn = document.getElementById('generateBtn');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '⏳ 압축 및 생성 중...';
-    btn.disabled = true;
-
-    try {
-        const content = await zip.generateAsync({ type: "blob" });
-        saveAs(content, `${modName.replace(/\s+/g, '_')}_RimWorldMod.zip`);
-    } catch (e) {
-        console.error(e);
-        alert('모드 생성 중 오류가 발생했습니다: ' + e.message);
-    } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    }
+    const content = await zip.generateAsync({type:"blob"});
+    saveAs(content, `${modName}.zip`);
+    btn.disabled = false; btn.textContent = '🧬 제노타입 모드 생성 (.zip)';
 });

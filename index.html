@@ -3,418 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RimWorld HAR 종족 모드 생성기</title>
-    <!-- JSZip for creating zip files in the browser -->
+    <title>RimWorld Biotech Xenotype Builder PRO</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="app-container">
-        <header class="app-header">
-            <div class="header-content">
-                <h1>RimWorld Mod Builder <span>[Humanoid Alien Races]</span></h1>
-                <p>항목에 원하는 수치와 이미지를 넣고 버튼을 누르면 즉시 림월드 종족 모드(.zip)가 생성됩니다!</p>
+
+<div class="met-float" id="metFloat">
+    <div class="met-title">⚖️ 대사 균형</div>
+    <div class="met-track"><div class="met-fill" id="metFill"></div><div class="met-zero"></div></div>
+    <div class="met-num" id="metNum">0</div>
+    <div class="met-hint" id="metHint">균형</div>
+</div>
+
+<div class="app-container">
+    <header class="app-header">
+        <div class="dna-badge">🧬 Biotech Ultimate Edition</div>
+        <h1>RimWorld <span>Xenotype</span> Builder</h1>
+        <p>바이오테크의 모든 카테고리를 지원하는 전문 제노타입 제작 도구</p>
+    </header>
+
+    <form id="modForm">
+        <!-- 1. 기본 정보 -->
+        <section class="card">
+            <h2><span class="icon">📦</span> 1. 모드 및 제노타입 정보</h2>
+            <div class="grid-2">
+                <div class="input-group"><label>모드 이름</label><input type="text" id="modName" value="My Ultimate Xenotype"></div>
+                <div class="input-group"><label>제작자</label><input type="text" id="author" value="Your Name"></div>
+                <div class="input-group"><label>제노타입 ID (DefName)</label><input type="text" id="defName" value="MegaXenotype"></div>
+                <div class="input-group"><label>표시 이름 (Label)</label><input type="text" id="xeLabel" value="초인"></div>
             </div>
-        </header>
+            <div class="input-group full-width" style="margin-top:15px;"><label>설명</label><textarea id="description" rows="2">모든 유전적 한계를 극복한 궁극의 제노타입입니다.</textarea></div>
+        </section>
 
-        <main class="main-content">
-            <form id="modForm">
-                <!-- Section 1: Mod Info -->
-                <section class="card">
-                    <h2><span class="icon">📦</span> 1. 모드 기본 정보</h2>
-                    <div class="grid-2">
-                        <div class="input-group">
-                            <label>모드 이름 (Mod Name)</label>
-                            <input type="text" id="modName" value="My Custom Race" required>
-                        </div>
-                        <div class="input-group">
-                            <label>제작자 (Author)</label>
-                            <input type="text" id="author" value="Your Name" required>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Section 2: Race Identity -->
-                <section class="card">
-                    <h2><span class="icon">👽</span> 2. 종족 정보</h2>
-                    <div class="grid-2">
-                        <div class="input-group">
-                            <label>종족 고유 ID (DefName, 영문연속 권장)</label>
-                            <input type="text" id="defName" value="MyAlienRace" required>
-                        </div>
-                        <div class="input-group">
-                            <label>게임 내 표시 이름 (Label)</label>
-                            <input type="text" id="raceLabel" value="우주 외계인" required>
-                        </div>
-                    </div>
-                    <div class="input-group full-width">
-                        <label>종족 설명 (Description)</label>
-                        <textarea id="description" rows="3" required>이 종족에 대한 설명입니다. 우주에서 왔습니다.</textarea>
-                    </div>
-                </section>
-
-                <!-- Section 3: Stats -->
-                <section class="card">
-                    <h2><span class="icon">📊</span> 3. 능력치 및 스탯</h2>
-                    <div class="grid-4">
-                        <div class="input-group">
-                            <label>기본 이동속도</label>
-                            <input type="number" id="moveSpeed" value="4.6" step="0.1">
-                        </div>
-                        <div class="input-group">
-                            <label>시장 가치 (은)</label>
-                            <input type="number" id="marketValue" value="1750" step="10">
-                        </div>
-                        <div class="input-group">
-                            <label>최소 쾌적 온도(°C)</label>
-                            <input type="number" id="minTemp" value="16">
-                        </div>
-                        <div class="input-group">
-                            <label>최대 쾌적 온도(°C)</label>
-                            <input type="number" id="maxTemp" value="26">
-                        </div>
-                        <div class="input-group">
-                            <label>체력 배율</label>
-                            <input type="number" id="healthScale" value="1.0" step="0.1">
-                        </div>
-                        <div class="input-group">
-                            <label>갑옷 방어력 (둔탁 %)</label>
-                            <input type="number" id="armorBlunt" value="0.0" step="0.01">
-                        </div>
-                        <div class="input-group">
-                            <label>갑옷 방어력 (날카로움 %)</label>
-                            <input type="number" id="armorSharp" value="0.0" step="0.01">
-                        </div>
-                        <div class="input-group">
-                            <label>허기 발생률(낮을수록 안굶음)</label>
-                            <input type="number" id="hungerRate" value="1.0" step="0.1">
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Section 4: Ecosystem -->
-                <section class="card">
-                    <h2><span class="icon">🌿</span> 4. 생태 및 습성</h2>
-                    <div class="grid-3">
-                        <div class="input-group">
-                            <label>식성 (Diet)</label>
-                            <select id="diet">
-                                <option value="Omnivorous">잡식 (Omnivorous)</option>
-                                <option value="Carnivorous">육식 (Carnivorous)</option>
-                                <option value="Herbivorous">초식 (Herbivorous)</option>
-                            </select>
-                        </div>
-                        <div class="input-group">
-                            <label>야성 (Wildness, 확률%)</label>
-                            <input type="number" id="wildness" value="0.1" step="0.05" max="1.0">
-                        </div>
-                        <div class="input-group">
-                            <label>도축 시 고기량</label>
-                            <input type="number" id="meatAmount" value="90">
-                        </div>
-                        <div class="input-group">
-                            <label>도축 시 가죽량</label>
-                            <input type="number" id="leatherAmount" value="50">
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Section 5: Traits -->
-                <section class="card">
-                    <h2><span class="icon">⭐</span> 5. 특성 / 트레이트</h2>
-                    <div class="help-text">
-                        <strong>📌 체크하면 종족 전원에게 해당 특성이 강제 부여됩니다.</strong><br>
-                        강제 부여된 특성은 게임 내에서 삭제하거나 변경할 수 없습니다. 신중하게 선택하세요.
-                    </div>
-                    <div class="trait-grid">
-                        <label class="trait-item">
-                            <input type="checkbox" id="trait-Tough" data-defname="Tough" data-degree="0">
-                            <div class="trait-info">
-                                <strong>강인함 (Tough)</strong>
-                                <small>체력 영향치 +50%, 부상에 강함</small>
-                            </div>
-                        </label>
-                        <label class="trait-item">
-                            <input type="checkbox" id="trait-FastLearner" data-defname="FastLearner" data-degree="0">
-                            <div class="trait-info">
-                                <strong>빠른 학습자 (Fast Learner)</strong>
-                                <small>모든 스킬 XP 획득 +50%</small>
-                            </div>
-                        </label>
-                        <label class="trait-item">
-                            <input type="checkbox" id="trait-Industrious" data-defname="Industrious" data-degree="0">
-                            <div class="trait-info">
-                                <strong>근면성실 (Industrious)</strong>
-                                <small>전반적 작업 속도 +35%</small>
-                            </div>
-                        </label>
-                        <label class="trait-item">
-                            <input type="checkbox" id="trait-Nimble" data-defname="Nimble" data-degree="0">
-                            <div class="trait-info">
-                                <strong>기민함 (Nimble)</strong>
-                                <small>갑옷 이동속도 패널티 무시</small>
-                            </div>
-                        </label>
-                        <label class="trait-item">
-                            <input type="checkbox" id="trait-Brawler" data-defname="Brawler" data-degree="0">
-                            <div class="trait-info">
-                                <strong>싸움꾼 (Brawler)</strong>
-                                <small>근접 +20%, 원거리 무기 거부</small>
-                            </div>
-                        </label>
-                        <label class="trait-item">
-                            <input type="checkbox" id="trait-CarefulShooter" data-defname="CarefulShooter" data-degree="0">
-                            <div class="trait-info">
-                                <strong>신중한 사격수 (Careful Shooter)</strong>
-                                <small>명중률 ↑, 발사 후 딜레이 +20%</small>
-                            </div>
-                        </label>
-                        <label class="trait-item">
-                            <input type="checkbox" id="trait-Kind" data-defname="Kind" data-degree="0">
-                            <div class="trait-info">
-                                <strong>친절함 (Kind)</strong>
-                                <small>사교 능력 +10%, 타인 기분 +6</small>
-                            </div>
-                        </label>
-                        <label class="trait-item">
-                            <input type="checkbox" id="trait-Optimist" data-defname="Optimist" data-degree="0">
-                            <div class="trait-info">
-                                <strong>낙관론자 (Optimist)</strong>
-                                <small>기분 기준선 +6 (업무 출력 ↑)</small>
-                            </div>
-                        </label>
-                        <label class="trait-item">
-                            <input type="checkbox" id="trait-PsychicSens" data-defname="PsychicSensitivity" data-degree="1">
-                            <div class="trait-info">
-                                <strong>정신적 민감 (Psychically Sensitive)</strong>
-                                <small>정신력 민감도 +25%, 심리 공격↑</small>
-                            </div>
-                        </label>
-                        <label class="trait-item">
-                            <input type="checkbox" id="trait-NightOwl" data-defname="NightOwl" data-degree="0">
-                            <div class="trait-info">
-                                <strong>야행성 (Night Owl)</strong>
-                                <small>밤 시간대 기분 +15, 수면 필요↓</small>
-                            </div>
-                        </label>
-                    </div>
-                </section>
-
-                <!-- Section 6: Skill Modifiers -->
-                <section class="card">
-                    <h2><span class="icon">📈</span> 6. 스킬 보정</h2>
-                    <div class="help-text">
-                        <strong>📌 종족이 가지는 스킬 보너스 / 패널티를 설정합니다.</strong><br>
-                        0이 기본값이며, 양수(+)면 보너스, 음수(-)면 페널티입니다. -20 ~ +20 범위 권장.
-                        ZIP 내 별도 Backstory XML 파일로 생성됩니다.
-                    </div>
-                    <div class="skill-grid">
-                        <div class="skill-row">
-                            <div class="skill-name">🔫 사격 (Shooting)</div>
-                            <div class="skill-input-wrap">
-                                <input type="number" id="skill-Shooting" class="skill-input" value="0" min="-20" max="20">
-                            </div>
-                        </div>
-                        <div class="skill-row">
-                            <div class="skill-name">⚔️ 근접 (Melee)</div>
-                            <div class="skill-input-wrap">
-                                <input type="number" id="skill-Melee" class="skill-input" value="0" min="-20" max="20">
-                            </div>
-                        </div>
-                        <div class="skill-row">
-                            <div class="skill-name">🏗️ 건설 (Construction)</div>
-                            <div class="skill-input-wrap">
-                                <input type="number" id="skill-Construction" class="skill-input" value="0" min="-20" max="20">
-                            </div>
-                        </div>
-                        <div class="skill-row">
-                            <div class="skill-name">⛏️ 채굴 (Mining)</div>
-                            <div class="skill-input-wrap">
-                                <input type="number" id="skill-Mining" class="skill-input" value="0" min="-20" max="20">
-                            </div>
-                        </div>
-                        <div class="skill-row">
-                            <div class="skill-name">🍳 요리 (Cooking)</div>
-                            <div class="skill-input-wrap">
-                                <input type="number" id="skill-Cooking" class="skill-input" value="0" min="-20" max="20">
-                            </div>
-                        </div>
-                        <div class="skill-row">
-                            <div class="skill-name">🌱 식물 (Plants)</div>
-                            <div class="skill-input-wrap">
-                                <input type="number" id="skill-Plants" class="skill-input" value="0" min="-20" max="20">
-                            </div>
-                        </div>
-                        <div class="skill-row">
-                            <div class="skill-name">🐾 동물 (Animals)</div>
-                            <div class="skill-input-wrap">
-                                <input type="number" id="skill-Animals" class="skill-input" value="0" min="-20" max="20">
-                            </div>
-                        </div>
-                        <div class="skill-row">
-                            <div class="skill-name">🔧 제작 (Crafting)</div>
-                            <div class="skill-input-wrap">
-                                <input type="number" id="skill-Crafting" class="skill-input" value="0" min="-20" max="20">
-                            </div>
-                        </div>
-                        <div class="skill-row">
-                            <div class="skill-name">🎨 예술 (Art)</div>
-                            <div class="skill-input-wrap">
-                                <input type="number" id="skill-Art" class="skill-input" value="0" min="-20" max="20">
-                            </div>
-                        </div>
-                        <div class="skill-row">
-                            <div class="skill-name">💊 의학 (Medicine)</div>
-                            <div class="skill-input-wrap">
-                                <input type="number" id="skill-Medicine" class="skill-input" value="0" min="-20" max="20">
-                            </div>
-                        </div>
-                        <div class="skill-row">
-                            <div class="skill-name">💬 사교 (Social)</div>
-                            <div class="skill-input-wrap">
-                                <input type="number" id="skill-Social" class="skill-input" value="0" min="-20" max="20">
-                            </div>
-                        </div>
-                        <div class="skill-row">
-                            <div class="skill-name">📚 지적 (Intellectual)</div>
-                            <div class="skill-input-wrap">
-                                <input type="number" id="skill-Intellectual" class="skill-input" value="0" min="-20" max="20">
-                            </div>
-                        </div>
-                    </div>
-                    <p class="skill-note">💡 스킬 보정은 ZIP 내 <code>Defs/BackstoryDefs/[종족명]_Backstory.xml</code> 파일로 생성됩니다. 해당 백스토리를 종족에 배정하면 적용됩니다.</p>
-                </section>
-
-                <!-- Section 7: Textures -->
-                <section class="card texture-card">
-                    <h2><span class="icon">🖼️</span> 7. 텍스처 (이미지) 설정</h2>
-
-                    <div class="help-text">
-                        <strong>📌 이미지는 어떻게 넣나요?</strong><br>
-                        각 방향(남/북/동)마다 별도 이미지가 필요합니다. 아래 <strong>예시 이미지</strong>를 참고하여 같은 형태의 PNG 파일을 업로드하세요.<br>
-                        배경이 <strong>투명한 PNG</strong>만 사용 가능합니다. 서쪽(West)은 동쪽(East) 이미지를 좌우 반전하여 자동 적용됩니다.
-                    </div>
-
-                    <!-- Preview Image -->
-                    <div class="texture-group">
-                        <h3 class="texture-group-title">🎴 모드 미리보기 이미지</h3>
-                        <div class="upload-box">
-                            <label>Preview.png / .jpg — 게임 내 모드 리스트 썸네일 (권장: 600×400px)</label>
-                            <input type="file" id="imgPreview" accept="image/png, image/jpeg">
-                            <div class="preview-container" id="preview-container-preview" style="display: none;">
-                                <span>선택된 이미지:</span>
-                                <img id="preview-img-preview" src="" alt="Preview thumbnail">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Head Textures -->
-                    <div class="texture-group">
-                        <h3 class="texture-group-title">👤 얼굴(Head) 텍스처 — 방향별</h3>
-                        <div class="direction-grid">
-
-                            <div class="direction-slot">
-                                <div class="direction-label">🔽 South (정면 / 남쪽)</div>
-                                <div class="example-img-wrap">
-                                    <span class="example-tag">예시</span>
-                                    <img src="public/examples/head_south.png" alt="head south example" class="example-img">
-                                </div>
-                                <input type="file" id="imgHeadSouth" accept="image/png" class="file-input-sm">
-                                <div class="preview-container" id="preview-container-head-south" style="display:none;">
-                                    <span>업로드된 이미지:</span>
-                                    <img id="preview-img-head-south" src="" alt="head south uploaded">
-                                </div>
-                            </div>
-
-                            <div class="direction-slot">
-                                <div class="direction-label">🔼 North (뒷면 / 북쪽)</div>
-                                <div class="example-img-wrap">
-                                    <span class="example-tag">예시</span>
-                                    <img src="public/examples/head_north.png" alt="head north example" class="example-img">
-                                </div>
-                                <input type="file" id="imgHeadNorth" accept="image/png" class="file-input-sm">
-                                <div class="preview-container" id="preview-container-head-north" style="display:none;">
-                                    <span>업로드된 이미지:</span>
-                                    <img id="preview-img-head-north" src="" alt="head north uploaded">
-                                </div>
-                            </div>
-
-                            <div class="direction-slot">
-                                <div class="direction-label">▶️ East (오른쪽 옆면)</div>
-                                <div class="example-img-wrap">
-                                    <span class="example-tag">예시</span>
-                                    <img src="public/examples/head_east.png" alt="head east example" class="example-img">
-                                </div>
-                                <input type="file" id="imgHeadEast" accept="image/png" class="file-input-sm">
-                                <div class="preview-container" id="preview-container-head-east" style="display:none;">
-                                    <span>업로드된 이미지:</span>
-                                    <img id="preview-img-head-east" src="" alt="head east uploaded">
-                                </div>
-                            </div>
-
-                        </div>
-                        <p class="west-note">⬅️ West(왼쪽 옆면)는 East 이미지를 좌우 반전하여 자동 생성됩니다.</p>
-                    </div>
-
-                    <!-- Body Textures -->
-                    <div class="texture-group">
-                        <h3 class="texture-group-title">🧍 몸통(Body) 텍스처 — 방향별</h3>
-                        <div class="direction-grid">
-
-                            <div class="direction-slot">
-                                <div class="direction-label">🔽 South (정면 / 남쪽)</div>
-                                <div class="example-img-wrap">
-                                    <span class="example-tag">예시</span>
-                                    <img src="public/examples/body_south.png" alt="body south example" class="example-img">
-                                </div>
-                                <input type="file" id="imgBodySouth" accept="image/png" class="file-input-sm">
-                                <div class="preview-container" id="preview-container-body-south" style="display:none;">
-                                    <span>업로드된 이미지:</span>
-                                    <img id="preview-img-body-south" src="" alt="body south uploaded">
-                                </div>
-                            </div>
-
-                            <div class="direction-slot">
-                                <div class="direction-label">🔼 North (뒷면 / 북쪽)</div>
-                                <div class="example-img-wrap">
-                                    <span class="example-tag">예시</span>
-                                    <img src="public/examples/body_north.png" alt="body north example" class="example-img">
-                                </div>
-                                <input type="file" id="imgBodyNorth" accept="image/png" class="file-input-sm">
-                                <div class="preview-container" id="preview-container-body-north" style="display:none;">
-                                    <span>업로드된 이미지:</span>
-                                    <img id="preview-img-body-north" src="" alt="body north uploaded">
-                                </div>
-                            </div>
-
-                            <div class="direction-slot">
-                                <div class="direction-label">▶️ East (오른쪽 옆면)</div>
-                                <div class="example-img-wrap">
-                                    <span class="example-tag">예시</span>
-                                    <img src="public/examples/body_east.png" alt="body east example" class="example-img">
-                                </div>
-                                <input type="file" id="imgBodyEast" accept="image/png" class="file-input-sm">
-                                <div class="preview-container" id="preview-container-body-east" style="display:none;">
-                                    <span>업로드된 이미지:</span>
-                                    <img id="preview-img-body-east" src="" alt="body east uploaded">
-                                </div>
-                            </div>
-
-                        </div>
-                        <p class="west-note">⬅️ West(왼쪽 옆면)는 East 이미지를 좌우 반전하여 자동 생성됩니다.</p>
-                    </div>
-
-                </section>
-                
-                <div class="action-bar">
-                    <button type="button" id="generateBtn" class="btn-generate">🚀 모드 생성 및 다운로드 (.zip)</button>
+        <!-- 2. 외형 및 피부색 -->
+        <section class="card">
+            <h2><span class="icon">🎨</span> 2. 색상 및 외형 설정</h2>
+            <div class="appearance-grid">
+                <div class="appearance-item">
+                    <label class="appearance-toggle"><input type="checkbox" id="useSkinColor" checked><span>피부색 고정</span></label>
+                    <div class="color-row"><input type="color" id="skinColor" value="#f1c27d"></div>
                 </div>
-            </form>
-        </main>
-    </div>
-    <script src="script.js"></script>
+                <div class="appearance-item">
+                    <label class="appearance-toggle"><input type="checkbox" id="useHairColor" checked><span>머리카락색 고정</span></label>
+                    <div class="color-row"><input type="color" id="hairColor" value="#ffffff"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. 생리 및 대사 (Physiology) -->
+        <section class="card">
+            <h2><span class="icon">🧪</span> 3. 생리 및 생존 (Physiology)</h2>
+            <div class="help-text">수면, 노화, 질병 저항력 등 생존의 기본이 되는 유전자들입니다.</div>
+            <div class="gene-card-grid" id="physiologyGrid"></div>
+        </section>
+
+        <!-- 4. 전투 및 신체 능력 (Combat) -->
+        <section class="card">
+            <h2><span class="icon">⚔️</span> 4. 전투 및 피지컬 (Combat)</h2>
+            <div class="help-text">근접/원거리 명중률, 공격력, 이동 속도와 관련된 유전자들입니다.</div>
+            <div class="gene-card-grid" id="combatGrid"></div>
+        </section>
+
+        <!-- 5. 사교 및 미모 (Social) -->
+        <section class="card">
+            <h2><span class="icon">🎭</span> 5. 사교 및 외관 (Social)</h2>
+            <div class="help-text">아름다움, 사교적 영향력, 기분과 관련된 유전자들입니다.</div>
+            <div class="gene-card-grid" id="socialGrid"></div>
+        </section>
+
+        <!-- 6. 특수 능력 (Active Abilities) - NEW!! -->
+        <section class="card dark-section" style="border-color: var(--primary);">
+            <h2><span class="icon">⚡</span> 6. 액티브 특수 능력 (Abilities)</h2>
+            <div class="help-text" style="border-left-color: var(--primary);">
+                <strong>📌 게임 내에서 직접 클릭하여 사용하는 액티브 스킬입니다.</strong><br>
+                화염 숨결, 독 가스 분사, 도약 등 강력한 초능력형 유전자를 부여합니다.
+            </div>
+            <div class="gene-card-grid" id="abilityGrid"></div>
+        </section>
+
+        <!-- 7. 신체 부위 및 미용 (Body Parts) -->
+        <section class="card">
+            <h2><span class="icon">🦊</span> 7. 신체 부위 및 미용 (Body Parts)</h2>
+            <div class="help-text">꼬리, 뿔, 귀 등 외형적으로 드러나는 부위들입니다. 일부는 능력치 보너스가 있습니다.</div>
+            <div class="gene-card-grid" id="bodyPartGrid"></div>
+        </section>
+
+        <!-- 8. 끔찍한 연구 및 아키타이트 (Archite) -->
+        <section class="card dark-section">
+            <h2><span class="icon">🦇</span> 8. 아키타이트 및 특수 유전자</h2>
+            <div class="help-text dark-hint">혈액 흡식, 불사 등 게임의 룰을 깨는 강력한 유전자들이 포함되어 있습니다.</div>
+            <div class="gene-card-grid" id="architeGrid"></div>
+        </section>
+
+        <!-- 9. 특성 및 스킬 -->
+        <section class="card">
+            <h2><span class="icon">⭐</span> 9. 강제 특성 및 스킬 보정</h2>
+            <div class="trait-grid" id="traitGrid" style="margin-bottom:20px;"></div>
+            <div class="skill-grid" id="skillGrid"></div>
+        </section>
+
+        <!-- 10. 텍스처 -->
+        <section class="card">
+            <h2><span class="icon">🖼️</span> 10. 아이콘 업로드</h2>
+            <div class="grid-2">
+                <div class="upload-box">
+                    <label>제노타입 아이콘 (128x128 PNG)</label>
+                    <input type="file" id="imgIcon" accept="image/png">
+                    <div class="preview-container" id="preview-container-icon" style="display:none;"><img id="preview-img-icon"></div>
+                </div>
+                <div class="upload-box">
+                    <label>미리보기 (Preview.png)</label>
+                    <input type="file" id="imgPreview" accept="image/png,image/jpeg">
+                    <div class="preview-container" id="preview-container-preview" style="display:none;"><img id="preview-img-preview"></div>
+                </div>
+            </div>
+        </section>
+
+        <div class="action-bar"><button type="button" id="generateBtn" class="btn-generate">🧬 제노타입 모드 생성 (.zip)</button></div>
+    </form>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
