@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RimWorld Biotech Xenotype Builder PRO</title>
+    <title>RimWorld Biotech Xenotype Builder ULTIMATE</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -22,26 +22,33 @@
     <header class="app-header">
         <div class="dna-badge">🧬 Biotech Ultimate Edition</div>
         <h1>RimWorld <span>Xenotype</span> Builder</h1>
-        <p>바이오테크의 모든 카테고리를 지원하는 전문 제노타입 제작 도구</p>
+        <p>유전 법칙부터 특수 능력까지 총망라한 종족 제작 도구</p>
     </header>
 
     <form id="modForm">
-        <!-- 1. 기본 정보 -->
+        <!-- 1. 기본 정보 & 유전 법칙 -->
         <section class="card">
-            <h2><span class="icon">📦</span> 1. 모드 및 제노타입 정보</h2>
+            <h2><span class="icon">📦</span> 1. 기본 정보 및 유전 법칙</h2>
             <div class="grid-2">
-                <div class="input-group"><label>모드 이름</label><input type="text" id="modName" value="My Ultimate Xenotype"></div>
+                <div class="input-group"><label>모드 이름</label><input type="text" id="modName" value="My Masterpiece Race"></div>
                 <div class="input-group"><label>제작자</label><input type="text" id="author" value="Your Name"></div>
-                <div class="input-group"><label>제노타입 ID (DefName)</label><input type="text" id="defName" value="MegaXenotype"></div>
-                <div class="input-group"><label>표시 이름 (Label)</label><input type="text" id="xeLabel" value="초인"></div>
+                <div class="input-group"><label>제노타입 ID (DefName)</label><input type="text" id="defName" value="MasterXenotype"></div>
+                <div class="input-group"><label>표시 이름 (Label)</label><input type="text" id="xeLabel" value="진화인"></div>
             </div>
-            <div class="input-group full-width" style="margin-top:15px;"><label>설명</label><textarea id="description" rows="2">모든 유전적 한계를 극복한 궁극의 제노타입입니다.</textarea></div>
+            
+            <div class="inheritance-box" style="margin-top: 20px; padding: 15px; background: rgba(129, 140, 248, 0.1); border-radius: 8px; border: 1px solid var(--primary);">
+                <label class="appearance-toggle">
+                    <input type="checkbox" id="isInheritable" checked>
+                    <strong style="color: var(--primary);">🧬 이 종족은 유전됩니다 (Germline)</strong>
+                </label>
+                <p style="font-size: 0.85em; margin-top: 5px; color: #94a3b8;">체크하면 자식이 부모의 유전자를 물려받아 태어납니다. 체크 해제 시 '생식세포'가 아닌 '제노진'으로 취급되어 유전되지 않습니다.</p>
+            </div>
         </section>
 
-        <!-- 2. 외형 및 피부색 -->
+        <!-- 2. 외형 및 체격 (NEW: Body Type 추가) -->
         <section class="card">
-            <h2><span class="icon">🎨</span> 2. 색상 및 외형 설정</h2>
-            <div class="appearance-grid">
+            <h2><span class="icon">🎨</span> 2. 색상 및 체격 설정</h2>
+            <div class="grid-2">
                 <div class="appearance-item">
                     <label class="appearance-toggle"><input type="checkbox" id="useSkinColor" checked><span>피부색 고정</span></label>
                     <div class="color-row"><input type="color" id="skinColor" value="#f1c27d"></div>
@@ -51,74 +58,75 @@
                     <div class="color-row"><input type="color" id="hairColor" value="#ffffff"></div>
                 </div>
             </div>
+            <div class="body-type-select" style="margin-top:20px;">
+                <label style="display:block; margin-bottom:10px; font-weight:500;">🧍 고정 체격 (Body Type)</label>
+                <div class="body-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;">
+                    <label class="body-option"><input type="radio" name="bodyType" value="None" checked> <span>기본값</span></label>
+                    <label class="body-option"><input type="radio" name="bodyType" value="Male"> <span>남성형</span></label>
+                    <label class="body-option"><input type="radio" name="bodyType" value="Female"> <span>여성형</span></label>
+                    <label class="body-option"><input type="radio" name="bodyType" value="Thin"> <span>날씬함</span></label>
+                    <label class="body-option"><input type="radio" name="bodyType" value="Hulk"> <span>거구</span></label>
+                    <label class="body-option"><input type="radio" name="bodyType" value="Fat"> <span>비만</span></label>
+                </div>
+            </div>
         </section>
 
-        <!-- 3. 생리 및 대사 (Physiology) -->
+        <!-- 3. 번식 및 성장 (NEW 카테고리) -->
         <section class="card">
-            <h2><span class="icon">🧪</span> 3. 생리 및 생존 (Physiology)</h2>
-            <div class="help-text">수면, 노화, 질병 저항력 등 생존의 기본이 되는 유전자들입니다.</div>
+            <h2><span class="icon">🐣</span> 3. 번식 및 성장 (Reproduction)</h2>
+            <div class="help-text">임신 확률, 노화 속도 등 종족의 번식 주기를 결정합니다.</div>
+            <div class="gene-card-grid" id="reproGrid"></div>
+        </section>
+
+        <!-- 4. 생리 및 생존 (Physiology) -->
+        <section class="card">
+            <h2><span class="icon">🧪</span> 4. 생리 및 생존 (Physiology)</h2>
             <div class="gene-card-grid" id="physiologyGrid"></div>
         </section>
 
-        <!-- 4. 전투 및 신체 능력 (Combat) -->
+        <!-- 5. 전투 및 성능 (Combat) -->
         <section class="card">
-            <h2><span class="icon">⚔️</span> 4. 전투 및 피지컬 (Combat)</h2>
-            <div class="help-text">근접/원거리 명중률, 공격력, 이동 속도와 관련된 유전자들입니다.</div>
+            <h2><span class="icon">⚔️</span> 5. 전투 및 피지컬 (Combat)</h2>
             <div class="gene-card-grid" id="combatGrid"></div>
         </section>
 
-        <!-- 5. 사교 및 미모 (Social) -->
+        <!-- 6. 사교 및 외관 (Social) -->
         <section class="card">
-            <h2><span class="icon">🎭</span> 5. 사교 및 외관 (Social)</h2>
-            <div class="help-text">아름다움, 사교적 영향력, 기분과 관련된 유전자들입니다.</div>
+            <h2><span class="icon">🎭</span> 6. 사교 및 외관 (Social)</h2>
             <div class="gene-card-grid" id="socialGrid"></div>
         </section>
 
-        <!-- 6. 특수 능력 (Active Abilities) - NEW!! -->
-        <section class="card dark-section" style="border-color: var(--primary);">
-            <h2><span class="icon">⚡</span> 6. 액티브 특수 능력 (Abilities)</h2>
-            <div class="help-text" style="border-left-color: var(--primary);">
-                <strong>📌 게임 내에서 직접 클릭하여 사용하는 액티브 스킬입니다.</strong><br>
-                화염 숨결, 독 가스 분사, 도약 등 강력한 초능력형 유전자를 부여합니다.
-            </div>
+        <!-- 7. 액티브 특수 능력 (Abilities) -->
+        <section class="card dark-section">
+            <h2><span class="icon">⚡</span> 7. 액티브 특수 능력 (Abilities)</h2>
             <div class="gene-card-grid" id="abilityGrid"></div>
         </section>
 
-        <!-- 7. 신체 부위 및 미용 (Body Parts) -->
+        <!-- 8. 신체 부위 및 미용 (Body Parts) -->
         <section class="card">
-            <h2><span class="icon">🦊</span> 7. 신체 부위 및 미용 (Body Parts)</h2>
-            <div class="help-text">꼬리, 뿔, 귀 등 외형적으로 드러나는 부위들입니다. 일부는 능력치 보너스가 있습니다.</div>
+            <h2><span class="icon">🦊</span> 8. 신체 부위 및 미용 (Body Parts)</h2>
             <div class="gene-card-grid" id="bodyPartGrid"></div>
         </section>
 
-        <!-- 8. 끔찍한 연구 및 아키타이트 (Archite) -->
+        <!-- 9. 아키타이트 및 특수 (Archite) -->
         <section class="card dark-section">
-            <h2><span class="icon">🦇</span> 8. 아키타이트 및 특수 유전자</h2>
-            <div class="help-text dark-hint">혈액 흡식, 불사 등 게임의 룰을 깨는 강력한 유전자들이 포함되어 있습니다.</div>
+            <h2><span class="icon">🦇</span> 9. 아키타이트 및 특수 유전자</h2>
             <div class="gene-card-grid" id="architeGrid"></div>
         </section>
 
-        <!-- 9. 특성 및 스킬 -->
+        <!-- 10. 특성 및 스킬 -->
         <section class="card">
-            <h2><span class="icon">⭐</span> 9. 강제 특성 및 스킬 보정</h2>
+            <h2><span class="icon">⭐</span> 10. 강제 특성 및 스킬 보정</h2>
             <div class="trait-grid" id="traitGrid" style="margin-bottom:20px;"></div>
             <div class="skill-grid" id="skillGrid"></div>
         </section>
 
-        <!-- 10. 텍스처 -->
         <section class="card">
-            <h2><span class="icon">🖼️</span> 10. 아이콘 업로드</h2>
-            <div class="grid-2">
-                <div class="upload-box">
-                    <label>제노타입 아이콘 (128x128 PNG)</label>
-                    <input type="file" id="imgIcon" accept="image/png">
-                    <div class="preview-container" id="preview-container-icon" style="display:none;"><img id="preview-img-icon"></div>
-                </div>
-                <div class="upload-box">
-                    <label>미리보기 (Preview.png)</label>
-                    <input type="file" id="imgPreview" accept="image/png,image/jpeg">
-                    <div class="preview-container" id="preview-container-preview" style="display:none;"><img id="preview-img-preview"></div>
-                </div>
+            <h2><span class="icon">🖼️</span> 11. 아이콘 설정</h2>
+            <div class="upload-box">
+                <label>제노타입 아이콘 (128x128 PNG)</label>
+                <input type="file" id="imgIcon" accept="image/png">
+                <div class="preview-container" id="preview-container-icon" style="display:none;"><img id="preview-img-icon"></div>
             </div>
         </section>
 
